@@ -31,7 +31,7 @@ class Swefilmer:
             os.path.join(self.xbmcaddon.Addon().getAddonInfo('profile').\
                              decode('utf-8'), 'temp'))
         if not os.path.exists(temp):
-            os.mkdir(temp)
+            os.makedirs(temp)
         cookiejarfile = os.path.join(temp, 'swefilmer_cookies.dat')
         self.cookiejar = cookielib.LWPCookieJar(cookiejarfile)
         if os.path.exists(cookiejarfile):
