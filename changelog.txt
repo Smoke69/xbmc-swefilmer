@@ -1,3 +1,7 @@
+Version 1.1
+-----------
+- Fixed issue #1: xml error in english texts
+
 Version 1.0
 -----------
 - Initial release
