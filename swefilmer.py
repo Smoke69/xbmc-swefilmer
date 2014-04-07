@@ -132,6 +132,29 @@ class Swefilmer:
             (self.baseN(num // b, b, numerals).lstrip(numerals[0]) + \
                  numerals[num % b])
 
+    def yazyaz(self, e):
+        _keyStr="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+        t = ""
+        f = 0
+        e = re.sub(r"[^A-Za-z0-9\+\/\=]", "", e)
+        while f < len(e):
+            s = _keyStr.find(e[f])
+            f += 1
+            o = _keyStr.find(e[f]) if f < len(e) else 0
+            f += 1
+            u = _keyStr.find(e[f]) if f < len(e) else 0
+            f += 1
+            a = _keyStr.find(e[f]) if f < len(e) else 0
+            f += 1
+            n = s<<2|o>>4
+            r = (o&15)<<4|u>>2
+            i = (u&3)<<6|a
+            t = t + chr(n)
+            if u != 64: t = t + chr(r)
+            if a != 64: t = t + chr(i)
+        return t
+
+
     def addCookies2Url(self, url):
         c = ''
         for cookie in self.cookiejar:
@@ -204,6 +227,10 @@ class Swefilmer:
             '<div class="filmaltiimg">.*?<img src="(.+?)".*?</div>', html,
             re.DOTALL)
         self.xbmc.log('scrape_video: img=' + str(img))
+        garble = re.findall("fastphpxyz\.yazyaz\('(.+?)'", html)
+        if garble:
+            self.xbmc.log('found garbled player')
+            html = self.yazyaz(garble[0])
         url = re.findall('<iframe .*?src="(.+?)" ', html)
         self.xbmc.log('scrape_video: url=' + str(url[0]))
         if 'docs.google.com' in url[0]:
