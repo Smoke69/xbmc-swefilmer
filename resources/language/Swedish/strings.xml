@@ -15,4 +15,6 @@
   <string id="30403">Skriv in användaruppgifter i inställningarna.</string>
   <string id="30501">Inloggning misslyckades</string>
   <string id="30502">Felaktigt användarnamn eller lösenord i inställningarna.</string>
+  <string id="30601">Hittade inte filmen</string>
+  <string id="30602">Filmen kan vara borttagen</string>
 </strings>

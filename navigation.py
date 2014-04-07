@@ -52,11 +52,11 @@ class Navigation(object):
         url = stream_urls[answer][1]
         return url
 
-    def add_menu_item(self, caption, action, total_items, url=None):
+    def add_menu_item(self, caption, action, total_items, logged_in, url=None):
         li = self.xbmcgui.ListItem(caption)
         infoLabels = {'Title': caption}
         li.setInfo(type='Video', infoLabels=infoLabels)
-        params = {'action': action}
+        params = {'action': action, 'logged_in': logged_in}
         if url:
             params['url'] = url
         item_url = self.plugin_url + '?' + urllib.urlencode(params)
@@ -64,14 +64,14 @@ class Navigation(object):
                                          listitem=li, isFolder=True,
                                          totalItems=total_items)
 
-    def add_video_item(self, caption, url, image, action, total_items):
+    def add_video_item(self, caption, url, image, action, total_items, logged_in):
         li = self.xbmcgui.ListItem(caption)
         li.setProperty('IsPlayable', 'true')
         if image:
             li.setThumbnailImage(image)
         infoLabels = {'Title': caption}
         li.setInfo(type='Video', infoLabels=infoLabels)
-        params = {'action': action, 'url': url}
+        params = {'action': action, 'url': url, 'logged_in': logged_in}
         item_url = self.plugin_url + '?' + urllib.urlencode(params)
         self.xbmcplugin.addDirectoryItem(handle=self.handle, url=item_url,
                                          listitem=li, isFolder=False,
@@ -86,14 +86,17 @@ class Navigation(object):
                 self.xbmcgui.Dialog().ok(self.localize(30501),
                                          self.localize(30502))
         total_items = 5 if logged_in else 4
-        self.add_menu_item(self.localize(30101), ACTION_NEW, total_items)
-        self.add_menu_item(self.localize(30102), ACTION_TOP, total_items)
+        self.add_menu_item(self.localize(30101), ACTION_NEW, total_items,
+                           logged_in)
+        self.add_menu_item(self.localize(30102), ACTION_TOP, total_items,
+                           logged_in)
         if logged_in:
             self.add_menu_item(self.localize(30103), ACTION_FAVORITES,
-                               total_items)
+                               total_items, logged_in)
         self.add_menu_item(self.localize(30104), ACTION_CATEGORIES,
-                           total_items)
-        self.add_menu_item(self.localize(30105), ACTION_SEARCH, total_items)
+                           total_items, logged_in)
+        self.add_menu_item(self.localize(30105), ACTION_SEARCH, total_items,
+                           logged_in)
         return True
 
     def new_menu(self):
@@ -113,7 +116,8 @@ class Navigation(object):
         ret, pagination = self.swefilmer.scrape_categories(html)
         total_items = len(ret)
         for (url, name), img in ret:
-            self.add_menu_item(name, ACTION_CATEGORY, total_items, url)
+            self.add_menu_item(name, ACTION_CATEGORY, total_items, 
+                               self.params['logged_in'], url)
         return True
 
     def category_menu(self):
@@ -123,10 +127,12 @@ class Navigation(object):
         ret, pagination = self.swefilmer.scrape_series(html)
         total_items = len(ret) + len(pagination)
         for (url, name), img in ret:
-            self.add_menu_item(name, ACTION_CATEGORY, total_items, url)
+            self.add_menu_item(name, ACTION_CATEGORY, total_items,
+                               self.params['logged_in'], url)
         if pagination:
             self.add_menu_item(self.localize(30301), ACTION_NEXT_PAGE,
-                               total_items, pagination[0])
+                               total_items,
+                               self.params['logged_in'], pagination[0])
         return True
 
     def search_menu(self):
@@ -149,10 +155,12 @@ class Navigation(object):
         ret, pagination = self.swefilmer.scrape_list(html)
         total_items = len(ret) + len(pagination)
         for (url, name), img in ret:
-            self.add_video_item(name, url, img, ACTION_VIDEO, total_items)
+            self.add_video_item(name, url, img, ACTION_VIDEO, total_items,
+                                self.params['logged_in'])
         if pagination:
             self.add_menu_item(self.localize(30301), ACTION_NEXT_PAGE,
-                               total_items, pagination[0])
+                               total_items, self.params['logged_in'],
+                               pagination[0])
         return True
 
     def video(self):
@@ -160,9 +168,13 @@ class Navigation(object):
         html = self.swefilmer.video_html(url)
         result = self.swefilmer.scrape_video(html)
         if not result:
-            self.xbmcgui.Dialog().ok(self.localize(30401),
-                                     self.localize(30402),
-                                     self.localize(30403))
+            if not self.params['logged_in']:
+                self.xbmcgui.Dialog().ok(self.localize(30401),
+                                         self.localize(30402),
+                                         self.localize(30403))
+            else:
+                self.xbmcgui.Dialog().ok(self.localize(30601),
+                                         self.localize(30602))
             self.xbmcplugin.setResolvedUrl(
                 self.handle, succeeded=False,
                 listitem=self.xbmcgui.ListItem(''))
