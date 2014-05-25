@@ -194,7 +194,7 @@ class Swefilmer:
             part_pattern='<div class="filmcontent">(.+?)<div id="sidebar">',
             url_and_name_pattern=\
                 '<div class="movief"><a href="(.+?)">(.+?)</a></div>',
-            img_pattern='<img src="(.+?)"[ ]+alt=.+?/></a>')
+            img_pattern='<img src="(.+?)"[ ]+alt=.+?/></a>\n')
 
     def scrape_categories(self, html):
         return self.parse(
@@ -231,6 +231,7 @@ class Swefilmer:
         if garble:
             self.xbmc.log('found garbled player')
             html = self.yazyaz(garble[0])
+            self.xbmc.log('scrape_video: html=' + str(html))
         url = re.findall('<iframe .*?src="(.+?)" ', html)
         self.xbmc.log('scrape_video: url=' + str(url[0]))
         if 'docs.google.com' in url[0]:
@@ -240,12 +241,16 @@ class Swefilmer:
                                document)
         if len(flashvars) > 0:
             return name, description, img, self.scrape_video_vk(flashvars[0])
+        flashvars = re.findall('name="FlashVars" value=".+?proxy.link=(.+?)"',
+                               document)
+        if len(flashvars) > 0:
+            url = urllib.unquote_plus(flashvars[0])
         else:
             url = self.scrape_video_registered(document)
-            if not url:
-                return
-            url = self.addCookies2Url(url)
-            return name, description, img, [('', url)]
+        if not url:
+            return
+        url = self.addCookies2Url(url)
+        return name, description, img, [('', url)]
 
     def scrape_googledocs(self, url):
         html = self.get_url(url, 'googledocs.html')
@@ -278,6 +283,11 @@ class Swefilmer:
         if videosrc:
             self.xbmc.log('scrape_video_registered: url= ' + str(videosrc[0]))
             return videosrc[0]
+        self.xbmc.log('scrape_video_registered: search for iframe')
+        iframe = re.findall('<iframe src="(.+?)"', html)
+        if iframe:
+            self.xbmc.log('scrape_video_registered: url= ' + str(iframe[0]))
+            return iframe[0]
 
     def new_menu_html(self):
         url = BASE_URL + 'newvideos.html'
