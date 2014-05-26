@@ -244,9 +244,15 @@ class Swefilmer:
         flashvars = re.findall('name="FlashVars" value=".+?proxy.link=(.+?)"',
                                document)
         if len(flashvars) > 0:
-            url = urllib.unquote_plus(flashvars[0])
-        else:
-            url = self.scrape_video_registered(document)
+            proxydoc = self.get_url(urllib.unquote_plus(flashvars[0]),
+                                    'proxydoc.html')
+            return name, description, img, self.scrape_video_proxy(proxydoc)
+        iframe = re.findall('<iframe src="(.+?)"', document)
+        if iframe:
+            self.xbmc.log('scrape_video: url= ' + str(iframe[0]))
+            html = self.get_url(iframe[0], 'iframe.html')
+            return name, description, img, self.scrape_video_proxy(html)
+        url = self.scrape_video_registered(document)
         if not url:
             return
         url = self.addCookies2Url(url)
@@ -266,6 +272,12 @@ class Swefilmer:
         urls = re.findall('url[0-9]+=(.+?)&amp;', flashvars)
         return zip(names, urls)
 
+    def scrape_video_proxy(self, html):
+        names = re.findall('"url([0-9]+)":".+?"', html)
+        urls = [x.replace("\\/", "/") for x in
+                re.findall('"url[0-9]+":"(.+?)"', html)]
+        return zip(names, urls)
+
     def scrape_video_registered(self, html):
         script = re.findall(
             '(<script type=\'text/javascript\'>eval\(function\(.*}\(.*)', html)
@@ -283,11 +295,6 @@ class Swefilmer:
         if videosrc:
             self.xbmc.log('scrape_video_registered: url= ' + str(videosrc[0]))
             return videosrc[0]
-        self.xbmc.log('scrape_video_registered: search for iframe')
-        iframe = re.findall('<iframe src="(.+?)"', html)
-        if iframe:
-            self.xbmc.log('scrape_video_registered: url= ' + str(iframe[0]))
-            return iframe[0]
 
     def new_menu_html(self):
         url = BASE_URL + 'newvideos.html'
