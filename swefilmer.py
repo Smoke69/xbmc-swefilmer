@@ -268,7 +268,7 @@ class Swefilmer:
         return zip(formats, urls)
 
     def scrape_video_vk(self, flashvars):
-        names = [x[3:] for x in re.findall('(url[0-9]+)=.+?&amp;', flashvars)]
+        names = re.findall('url([0-9]+)=.+?&amp;', flashvars)
         urls = re.findall('url[0-9]+=(.+?)&amp;', flashvars)
         return zip(names, urls)
 

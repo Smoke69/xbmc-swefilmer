@@ -17,4 +17,9 @@
   <string id="30502">Wrong username or password in settings.</string>
   <string id="30601">Could not find video</string>
   <string id="30602">The video might be removed</string>
+  <string id="30700">Quality selection</string>
+  <string id="30701">Manually select</string>
+  <string id="30702">Highest available</string>
+  <string id="30703">Lowest available</string>
+  <string id="30704">Near</string>
 </strings>

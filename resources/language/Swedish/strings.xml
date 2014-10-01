@@ -17,4 +17,9 @@
   <string id="30502">Felaktigt användarnamn eller lösenord i inställningarna.</string>
   <string id="30601">Hittade inte filmen</string>
   <string id="30602">Filmen kan vara borttagen</string>
+  <string id="30700">Kvalitetsval</string>
+  <string id="30701">Välj manuellt</string>
+  <string id="30702">Högsta möjliga</string>
+  <string id="30703">Lägsta möjliga</string>
+  <string id="30704">Nära</string>
 </strings>

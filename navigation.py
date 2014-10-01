@@ -27,6 +27,7 @@ class Navigation(object):
         self.params = self.swefilmer.parameters_string_to_dict(params)
         self.settings = xbmcaddon.Addon(id='plugin.video.swefilmer')
         self.localize = self.settings.getLocalizedString
+        self.select_quality = int(self.settings.getSetting('select_quality'))
 
     def get_credentials(self):
         username = self.settings.getSetting('username')
@@ -41,15 +42,26 @@ class Navigation(object):
         else:
             return None
 
-    def quality_select_dialog(self, stream_urls):
+    def quality_select(self, stream_urls):
+        ix = 0
         qualities = [s[0] for s in stream_urls]
-        dialog = self.xbmcgui.Dialog()
-        answer = 0
-        if len(qualities) > 1:
-            answer = dialog.select(self.localize(30201), qualities)
-            if answer == -1:
+        if self.select_quality == 0:
+            dialog = self.xbmcgui.Dialog()
+            ix = dialog.select(self.localize(30201), qualities)
+            if ix == -1:
                 return None
-        url = stream_urls[answer][1]
+        elif self.select_quality == 1:
+            ix = len(qualities) - 1
+        elif self.select_quality == 2:
+            ix = 0
+        elif self.select_quality == 3:
+            pref = int(self.settings.getSetting('quality_pref'))
+            while True:
+                if ix >= len(qualities) - 1: break
+                mean = (int(qualities[ix]) + int(qualities[ix+1])) / 2
+                if pref < mean: break
+                ix += 1
+        url = stream_urls[ix][1]
         return url
 
     def add_menu_item(self, caption, action, total_items, logged_in, url=None):
@@ -185,7 +197,7 @@ class Navigation(object):
         self.xbmc.log('video: img=' + str(img))
         self.xbmc.log('video: streams=' + str(streams))
         if len(url) > 1:
-            url = self.quality_select_dialog(streams)
+            url = self.quality_select(streams)
             if not url:
                 self.xbmcplugin.setResolvedUrl(
                     self.handle, succeeded=False,
