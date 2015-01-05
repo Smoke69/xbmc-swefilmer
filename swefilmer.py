@@ -249,8 +249,11 @@ class Swefilmer:
             return name, description, img, self.scrape_video_proxy(proxydoc)
         iframe = re.findall('<iframe src="(.+?)"', document)
         if iframe:
-            self.xbmc.log('scrape_video: url= ' + str(iframe[0]))
-            html = self.get_url(iframe[0], 'iframe.html')
+            url = iframe[0]
+            self.xbmc.log('scrape_video: url= ' + url)
+            if not url.startswith('http'):
+                url = 'http:' + url
+            html = self.get_url(url, 'iframe.html')
             return name, description, img, self.scrape_video_proxy(html)
         url = self.scrape_video_registered(document)
         if not url:
