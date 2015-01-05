@@ -1,3 +1,7 @@
+Version 1.6
+-----------
+Resolving mail.ru
+
 Version 1.5
 -----------
 Fixed issue with missing protocol for vk.com
