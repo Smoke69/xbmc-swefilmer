@@ -247,6 +247,9 @@ class Swefilmer:
             proxydoc = self.get_url(urllib.unquote_plus(flashvars[0]),
                                     'proxydoc.html')
             return name, description, img, self.scrape_video_proxy(proxydoc)
+        flashvars = re.findall('var flashVars = {(.+?)}', document)
+        if len(flashvars) > 0:
+            return name, description, img, self.scrape_video_mailru(flashvars[0])
         iframe = re.findall('<iframe src="(.+?)"', document)
         if iframe:
             url = iframe[0]
@@ -279,6 +282,16 @@ class Swefilmer:
         names = re.findall('"url([0-9]+)":".+?"', html)
         urls = [x.replace("\\/", "/") for x in
                 re.findall('"url[0-9]+":"(.+?)"', html)]
+        return zip(names, urls)
+
+    def scrape_video_mailru(self, flashvars):
+        url = re.findall('"metadataUrl":"(.+?)"', flashvars)[0]
+        self.xbmc.log('scrape_video_mailru: url=' + str(url))
+        mailru = self.get_url(url, 'mailru.html')
+        self.xbmc.log('scrape_video_mailru: mailru=' + str(mailru))
+        videos = re.findall(',"videos":\[{(.+?)}\],', mailru)
+        names = re.findall('"key":"(.+?)"', videos[0])
+        urls = [self.addCookies2Url(x) for x in re.findall('"url":"(.+?)"', videos[0])]
         return zip(names, urls)
 
     def scrape_video_registered(self, html):
