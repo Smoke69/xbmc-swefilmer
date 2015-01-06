@@ -237,6 +237,8 @@ class Swefilmer:
         if 'docs.google.com' in url[0]:
             return name, description, img, self.scrape_googledocs(url[0])
         document = self.get_url(url[0], 'document.html')
+        if len(re.findall('jwplayer\(.+?\)\.setup', document)) > 0:
+            return name, description, img, self.scrape_video_jwplayer(document)
         flashvars = re.findall('<param name="flashvars" value="(.+?)">',
                                document)
         if len(flashvars) > 0:
@@ -292,6 +294,15 @@ class Swefilmer:
         videos = re.findall(',"videos":\[{(.+?)}\],', mailru)
         names = re.findall('"key":"(.+?)"', videos[0])
         urls = [self.addCookies2Url(x) for x in re.findall('"url":"(.+?)"', videos[0])]
+        return zip(names, urls)
+
+    def scrape_video_jwplayer(self, document):
+        sources = re.findall('sources: \[(.+?)\]', document)
+        
+        names = re.findall('"label":"(.+?)"', sources[0])
+        files = re.findall('"file":"(.+?)"', sources[0])
+        urls = [x.decode("unicode-escape") for x in
+                re.findall('"file":"(.+?)"', sources[0])]
         return zip(names, urls)
 
     def scrape_video_registered(self, html):
