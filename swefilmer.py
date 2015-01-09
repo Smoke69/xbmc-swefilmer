@@ -27,6 +27,7 @@ class Swefilmer:
         self.xbmcplugin = xbmcplugin
         self.xbmcgui = xbmcgui
         self.xbmcaddon = xbmcaddon
+        self.html_parser = HTMLParser.HTMLParser()
         temp = self.xbmc.translatePath(
             os.path.join(self.xbmcaddon.Addon().getAddonInfo('profile').\
                              decode('utf-8'), 'temp'))
@@ -232,21 +233,23 @@ class Swefilmer:
             self.xbmc.log('found garbled player')
             html = self.yazyaz(garble[0])
             self.xbmc.log('scrape_video: html=' + str(html))
-        url = re.findall('<iframe .*?src="(.+?)" ', html)
-        self.xbmc.log('scrape_video: url=' + str(url[0]))
-        if 'docs.google.com' in url[0]:
-            return name, description, img, self.scrape_googledocs(url[0])
-        document = self.get_url(url[0], 'document.html')
+        url = self.html_parser.unescape(re.findall('<iframe .*?src="(.+?)" ', html)[0])
+        self.xbmc.log('scrape_video: url=' + str(url))
+        if 'docs.google.com' in url:
+            return name, description, img, self.scrape_googledocs(url)
+        document = self.get_url(url, 'document.html')
+        if len(re.findall('encodeURIComponent', document)) > 0:
+            document = self.vkfixz(document)
         if len(re.findall('jwplayer\(.+?\)\.setup', document)) > 0:
             return name, description, img, self.scrape_video_jwplayer(document)
         flashvars = re.findall('<param name="flashvars" value="(.+?)">',
                                document)
         if len(flashvars) > 0:
             return name, description, img, self.scrape_video_vk(flashvars[0])
-        flashvars = re.findall('name="FlashVars" value=".+?proxy.link=(.+?)"',
+        flashvars = re.findall('name="FlashVars" value=".+?proxy.link=(.+?)["&]',
                                document)
         if len(flashvars) > 0:
-            proxydoc = self.get_url(urllib.unquote_plus(flashvars[0]),
+            proxydoc = self.get_url(self.html_parser.unescape(urllib.unquote_plus(flashvars[0])),
                                     'proxydoc.html')
             return name, description, img, self.scrape_video_proxy(proxydoc)
         flashvars = re.findall('var flashVars = {(.+?)}', document)
@@ -304,6 +307,14 @@ class Swefilmer:
         urls = [x.decode("unicode-escape") for x in
                 re.findall('"file":"(.+?)"', sources[0])]
         return zip(names, urls)
+
+    def vkfixz(self, document):
+        url = self.html_parser.unescape(eval("'" + re.findall('location.href = "(.+?)"', document)[0] + "'"))
+        document = self.get_url(url, 'vkfixz.html')
+        if len(re.findall('encodeURIComponent', document)) > 0:
+            url = self.html_parser.unescape(eval("'" + re.findall('location.href = "(.+?)"', document)[0] + "'"))
+            document = self.get_url(url, 'vkfixz.html')
+        return document
 
     def scrape_video_registered(self, html):
         script = re.findall(
