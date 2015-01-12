@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from mocks import Xbmc, Xbmcplugin, Xbmcgui, Xbmcaddon
+import re
 import swefilmer
 import sys
 import urllib
@@ -43,8 +44,9 @@ class Navigation(object):
             return None
 
     def quality_select(self, stream_urls):
+        # TODO: sort qualities
         ix = 0
-        qualities = [s[0] for s in stream_urls]
+        qualities = [re.findall('[0-9]+', s[0])[0] for s in stream_urls]
         if self.select_quality == 0:
             dialog = self.xbmcgui.Dialog()
             ix = dialog.select(self.localize(30201), qualities)
