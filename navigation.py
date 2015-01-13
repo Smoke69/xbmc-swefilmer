@@ -44,10 +44,18 @@ class Navigation(object):
             return None
 
     def quality_select(self, stream_urls):
-        # TODO: sort qualities
+        sortable = True
         ix = 0
-        qualities = [re.findall('[0-9]+', s[0])[0] for s in stream_urls]
-        if self.select_quality == 0:
+        try:
+            qualities = [re.findall('[0-9]+', s[0])[0] for s in stream_urls]
+            urls = [x[1] for x in stream_urls]
+            stream_urls = zip(qualities, urls)
+            stream_urls.sort(key=lambda tup: tup[0])
+        except:
+            self.xbmc.log('quality_select: not sortable: ' + str(stream_urls))
+            sortable = False
+            qualities = [s[0] for s in stream_urls]
+        if not sortable or self.select_quality == 0:
             dialog = self.xbmcgui.Dialog()
             ix = dialog.select(self.localize(30201), qualities)
             if ix == -1:
@@ -198,7 +206,7 @@ class Navigation(object):
         self.xbmc.log('video: description=' + str(description))
         self.xbmc.log('video: img=' + str(img))
         self.xbmc.log('video: streams=' + str(streams))
-        if len(url) > 1:
+        if len(streams) > 1:
             url = self.quality_select(streams)
             if not url:
                 self.xbmcplugin.setResolvedUrl(
@@ -206,7 +214,7 @@ class Navigation(object):
                     listitem=self.xbmcgui.ListItem(''))
                 return False
         else:
-            url = url[0][1]
+            url = streams[0][1]
         list_item = self.xbmcgui.ListItem(name)
         if img:
             list_item.setThumbnailImage(img[0])
