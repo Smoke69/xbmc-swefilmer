@@ -241,7 +241,9 @@ class Swefilmer:
         if len(re.findall('encodeURIComponent', document)) > 0:
             document = self.vkfixz(document)
         if len(re.findall('jwplayer\(.+?\)\.setup', document)) > 0:
-            return name, description, img, self.scrape_video_jwplayer(document)
+            if len(re.findall('sources: \[(.+?)\]', document)) > 0:
+                return name, description, img, self.scrape_video_jwplayer(document)
+            return name, description, img, self.scrape_video_jwplayer2(document)
         flashvars = re.findall('<param name="flashvars" value="(.+?)">',
                                document)
         if len(flashvars) > 0:
@@ -279,9 +281,8 @@ class Swefilmer:
         return zip(formats, urls)
 
     def scrape_video_vk(self, flashvars):
-        names = re.findall('url([0-9]+)=.+?&amp;', flashvars)
-        urls = re.findall('url[0-9]+=(.+?)&amp;', flashvars)
-        return zip(names, urls)
+        urls = re.findall('url([0-9]+)=(.+?)&amp;', flashvars)
+        return urls
 
     def scrape_video_proxy(self, html):
         names = re.findall('"url([0-9]+)":".+?"', html)
@@ -315,6 +316,15 @@ class Swefilmer:
             url = self.html_parser.unescape(eval("'" + re.findall('location.href = "(.+?)"', document)[0] + "'"))
             document = self.get_url(url, 'vkfixz.html')
         return document
+
+    def scrape_video_jwplayer2(self, document):
+        oid = re.findall("param\[5\]\s?\+\s?'(.+?)'", document)
+        videoId = re.findall("param\[6\]\s?\+\s?'(.+?)'", document)
+        hash = re.findall("param\[7\]\s?\+\s?'(.+?)'", document)
+        urlQ = 'https://api.vk.com/method/video.getEmbed?oid=' + oid[0] +'&video_id='+videoId[0]+'&embed_hash='+hash[0]+'&callback=callbackFunc'
+        documentQ = self.get_url(urlQ, 'embed.html');
+        urls = re.findall('"url([0-9]+?)":"(.+?)"', documentQ)
+        return urls
 
     def scrape_video_registered(self, html):
         script = re.findall(
