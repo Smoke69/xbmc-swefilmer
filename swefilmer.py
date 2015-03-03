@@ -233,6 +233,12 @@ class Swefilmer:
             self.xbmc.log('found garbled player')
             html = self.yazyaz(garble[0])
             self.xbmc.log('scrape_video: html=' + str(html))
+        else:
+            garble = re.findall("swe.zzz\('(.+?)'", html)
+            if garble:
+                self.xbmc.log('found zzz')
+                html = self.yazyaz(garble[2])
+                self.xbmc.log('scrape_video: html=' + str(html))
         url = self.html_parser.unescape(re.findall('<iframe .*?src="(.+?)" ', html)[0])
         self.xbmc.log('scrape_video: url=' + str(url))
         if 'docs.google.com' in url:

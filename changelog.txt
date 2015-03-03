@@ -1,3 +1,7 @@
+Version 1.10
+------------
+Adjustments for video urls
+
 Version 1.9
 -----------
 Extraction of urls, thanks to Boxedsolutions
