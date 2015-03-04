@@ -56,11 +56,15 @@ class Swefilmer:
         req.add_header('User-Agent', USERAGENT)
         if referer:
             req.add_header('Referer', referer)
-        response = urllib2.urlopen(req, data)
-        url = response.geturl()
-        html = response.read()
-        response.close()
-        self.cookiejar.save()
+        try:
+            response = urllib2.urlopen(req, data)
+            url = response.geturl()
+            html = response.read()
+            response.close()
+            self.cookiejar.save()
+        except urllib2.HTTPError as e:
+            self.xbmc.log('get_url: failed: ' + str(e))
+            return None
 
         if filename and SAVE_FILE:
             filename = self.xbmc.translatePath('special://temp/' + filename)
@@ -200,14 +204,14 @@ class Swefilmer:
     def scrape_categories(self, html):
         return self.parse(
             html,
-            part_pattern="<ul id='ul_categories'>(.+?)<ul class='hidden_li'>",
-            url_and_name_pattern='<li class=.+?<a href="(.+?)">(.+?)</a>',
+            part_pattern="<ul id=['\"]ul_categories['\"]>(.+?)<ul class=['\"]hidden_li['\"]>",
+            url_and_name_pattern='<li.+?<a href="(.+?)">(.+?)</a>',
             img_pattern=None)
 
     def scrape_series(self, html):
         return self.parse(
             html,
-            part_pattern='<ul class=\'hidden_li\'>(.+?)</ul>',
+            part_pattern="<ul class=['\"]hidden_li['\"]>(.+?)</ul>",
             url_and_name_pattern='<a href="(.+?)">(.+?)</a>',
             img_pattern=None)
 
@@ -228,73 +232,36 @@ class Swefilmer:
             '<div class="filmaltiimg">.*?<img src="(.+?)".*?</div>', html,
             re.DOTALL)
         self.xbmc.log('scrape_video: img=' + str(img))
-        garble = re.findall("fastphpxyz\.yazyaz\('(.+?)'", html)
-        if garble:
-            self.xbmc.log('found garbled player')
-            html = self.yazyaz(garble[0])
-            self.xbmc.log('scrape_video: html=' + str(html))
-        else:
-            garble = re.findall("swe.zzz\('(.+?)'", html)
-            if garble:
-                self.xbmc.log('found zzz')
-                html = self.yazyaz(garble[2])
-                self.xbmc.log('scrape_video: html=' + str(html))
+        garble = re.findall("swe.zzz\('(.+?)'", html)
+        player_index = 0 if len(garble) == 1 else 1
+        html = self.yazyaz(garble[player_index])
+        self.xbmc.log('scrape_video: html=' + str(html))
         url = self.html_parser.unescape(re.findall('<iframe .*?src="(.+?)" ', html)[0])
         self.xbmc.log('scrape_video: url=' + str(url))
-        if 'docs.google.com' in url:
-            return name, description, img, self.scrape_googledocs(url)
         document = self.get_url(url, 'document.html')
-        if len(re.findall('encodeURIComponent', document)) > 0:
-            document = self.vkfixz(document)
+        if document == None: return None
+        if 'docs.google.com' in url:
+            return name, description, img, self.scrape_googledocs(document)
         if len(re.findall('jwplayer\(.+?\)\.setup', document)) > 0:
             if len(re.findall('sources: \[(.+?)\]', document)) > 0:
                 return name, description, img, self.scrape_video_jwplayer(document)
             return name, description, img, self.scrape_video_jwplayer2(document)
-        flashvars = re.findall('<param name="flashvars" value="(.+?)">',
-                               document)
-        if len(flashvars) > 0:
-            return name, description, img, self.scrape_video_vk(flashvars[0])
-        flashvars = re.findall('name="FlashVars" value=".+?proxy.link=(.+?)["&]',
-                               document)
-        if len(flashvars) > 0:
-            proxydoc = self.get_url(self.html_parser.unescape(urllib.unquote_plus(flashvars[0])),
-                                    'proxydoc.html')
-            return name, description, img, self.scrape_video_proxy(proxydoc)
         flashvars = re.findall('var flashVars = {(.+?)}', document)
         if len(flashvars) > 0:
             return name, description, img, self.scrape_video_mailru(flashvars[0])
-        iframe = re.findall('<iframe src="(.+?)"', document)
-        if iframe:
-            url = iframe[0]
-            self.xbmc.log('scrape_video: url= ' + url)
-            if not url.startswith('http'):
-                url = 'http:' + url
-            html = self.get_url(url, 'iframe.html')
-            return name, description, img, self.scrape_video_proxy(html)
         url = self.scrape_video_registered(document)
-        if not url:
-            return
         url = self.addCookies2Url(url)
         return name, description, img, [('', url)]
 
-    def scrape_googledocs(self, url):
-        html = self.get_url(url, 'googledocs.html')
-        formats = re.findall('"fmt_list":"(.+?)"', html)[0].split(',')
+    def scrape_googledocs(self, html):
+        fmt_list = re.findall('"fmt_list":"(.+?)"', html)
+        if len(fmt_list) == 0: return None
+        formats = fmt_list[0].split(',')
         streams = re.findall('"url_encoded_fmt_stream_map":"(.+?)"',
                              html)[0].split(',')
         urls = [self.addCookies2Url(urllib2.unquote(x).split('\\u0026')[1]
                                     .split('\\u003d')[1]) for x in streams]
         return zip(formats, urls)
-
-    def scrape_video_vk(self, flashvars):
-        urls = re.findall('url([0-9]+)=(.+?)&amp;', flashvars)
-        return urls
-
-    def scrape_video_proxy(self, html):
-        names = re.findall('"url([0-9]+)":".+?"', html)
-        urls = [x.replace("\\/", "/") for x in
-                re.findall('"url[0-9]+":"(.+?)"', html)]
-        return zip(names, urls)
 
     def scrape_video_mailru(self, flashvars):
         url = re.findall('"metadataUrl":"(.+?)"', flashvars)[0]
@@ -314,14 +281,6 @@ class Swefilmer:
         urls = [x.decode("unicode-escape") for x in
                 re.findall('"file":"(.+?)"', sources[0])]
         return zip(names, urls)
-
-    def vkfixz(self, document):
-        url = self.html_parser.unescape(eval("'" + re.findall('location.href = "(.+?)"', document)[0] + "'"))
-        document = self.get_url(url, 'vkfixz.html')
-        if len(re.findall('encodeURIComponent', document)) > 0:
-            url = self.html_parser.unescape(eval("'" + re.findall('location.href = "(.+?)"', document)[0] + "'"))
-            document = self.get_url(url, 'vkfixz.html')
-        return document
 
     def scrape_video_jwplayer2(self, document):
         oid = re.findall("param\[5\]\s?\+\s?'(.+?)'", document)
