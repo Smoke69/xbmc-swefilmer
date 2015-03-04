@@ -1,3 +1,7 @@
+Version 1.11
+------------
+Cleanup, parse players
+
 Version 1.10
 ------------
 Adjustments for video urls
