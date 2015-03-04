@@ -190,7 +190,7 @@ class Navigation(object):
         html = self.swefilmer.video_html(url)
         result = self.swefilmer.scrape_video(html)
         if result: name, description, img, streams = result
-        if not result or len(streams) == 0:
+        if not result or not streams or len(streams) == 0:
             if not self.params['logged_in']:
                 self.xbmcgui.Dialog().ok(self.localize(30401),
                                          self.localize(30402),
