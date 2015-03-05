@@ -7,7 +7,7 @@ import time
 import urllib
 import urllib2
 
-SAVE_FILE = True
+SAVE_FILE = False
 BASE_URL = 'http://www.swefilmer.com/'
 USERAGENT = ' Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3'
 
@@ -51,7 +51,7 @@ class Swefilmer:
         """
         self.xbmc.log('get_url' + ((' (' + filename + ')')
                                    if filename else '') + ': ' +
-                      str(url))
+                      str(url), level=self.xbmc.LOGDEBUG)
         req = urllib2.Request(url)
         req.add_header('User-Agent', USERAGENT)
         if referer:
@@ -63,7 +63,7 @@ class Swefilmer:
             response.close()
             self.cookiejar.save()
         except urllib2.HTTPError as e:
-            self.xbmc.log('get_url: failed: ' + str(e))
+            self.xbmc.log('get_url: failed: ' + str(e), level=self.xbmc.LOGERROR)
             return None
 
         if filename and SAVE_FILE:
@@ -227,31 +227,50 @@ class Swefilmer:
             name = name[0]
         description = re.findall(
             '>Beskrivning<.*?<p>(.+?)</p>', html, re.DOTALL)
-        self.xbmc.log('scrape_video: description=' + str(description))
+        self.xbmc.log('scrape_video: description=' + str(description),
+                      level=self.xbmc.LOGDEBUG)
         img = re.findall(
             '<div class="filmaltiimg">.*?<img src="(.+?)".*?</div>', html,
             re.DOTALL)
-        self.xbmc.log('scrape_video: img=' + str(img))
-        garble = re.findall("swe.zzz\('(.+?)'", html)
-        player_index = 0 if len(garble) == 1 else 1
-        html = self.yazyaz(garble[player_index])
-        self.xbmc.log('scrape_video: html=' + str(html))
-        url = self.html_parser.unescape(re.findall('<iframe .*?src="(.+?)" ', html)[0])
-        self.xbmc.log('scrape_video: url=' + str(url))
-        document = self.get_url(url, 'document.html')
-        if document == None: return None
-        if 'docs.google.com' in url:
-            return name, description, img, self.scrape_googledocs(document)
-        if len(re.findall('jwplayer\(.+?\)\.setup', document)) > 0:
-            if len(re.findall('sources: \[(.+?)\]', document)) > 0:
-                return name, description, img, self.scrape_video_jwplayer(document)
-            return name, description, img, self.scrape_video_jwplayer2(document)
-        flashvars = re.findall('var flashVars = {(.+?)}', document)
-        if len(flashvars) > 0:
-            return name, description, img, self.scrape_video_mailru(flashvars[0])
-        url = self.scrape_video_registered(document)
-        url = self.addCookies2Url(url)
-        return name, description, img, [('', url)]
+        self.xbmc.log('scrape_video: img=' + str(img),
+                      level=self.xbmc.LOGDEBUG)
+        players = re.findall('<div id="(.+?)".+?swe.zzz\(\'(.+?)\'', html)
+        return name, description, img, self.scrape_video_urls(players)
+
+    def scrape_video_urls(self, players):
+        items = []
+        for player in players:
+            self.xbmc.log('scrape_video_urls: player=' + str(player),
+                          level=self.xbmc.LOGDEBUG)
+            streams = None
+            if player[0].find("trailer") > -1: continue
+            html = self.yazyaz(player[1])
+            self.xbmc.log('scrape_video_urls: html=' + str(html),
+                          level=self.xbmc.LOGDEBUG)
+            url = self.html_parser.unescape(re.findall('<iframe .*?src="(.+?)" ', html)[0])
+            self.xbmc.log('scrape_video_urls: url=' + str(url),
+                          level=self.xbmc.LOGDEBUG)
+            document = self.get_url(url, 'document.html')
+            if document == None: continue
+            if 'docs.google.com' in url:
+                streams = self.scrape_googledocs(document)
+            elif len(re.findall('jwplayer\(.+?\)\.setup', document)) > 0:
+                if len(re.findall('sources: \[(.+?)\]', document)) > 0:
+                    streams = self.scrape_video_jwplayer(document)
+                else:
+                    streams = self.scrape_video_jwplayer2(document)
+            else:
+                flashvars = re.findall('var flashVars = {(.+?)}', document)
+                if len(flashvars) > 0:
+                    streams = self.scrape_video_mailru(flashvars[0])
+                else:
+                    url = self.scrape_video_registered(document)
+                    url = self.addCookies2Url(url)
+                    streams = [('', url)]
+            if streams and len(streams) > 0: items.append(streams)
+            self.xbmc.log('scrape_video_urls: streams=' + str(streams),
+                          level=self.xbmc.LOGDEBUG)
+        return items
 
     def scrape_googledocs(self, html):
         fmt_list = re.findall('"fmt_list":"(.+?)"', html)
@@ -265,9 +284,11 @@ class Swefilmer:
 
     def scrape_video_mailru(self, flashvars):
         url = re.findall('"metadataUrl":"(.+?)"', flashvars)[0]
-        self.xbmc.log('scrape_video_mailru: url=' + str(url))
+        self.xbmc.log('scrape_video_mailru: url=' + str(url),
+                      level=self.xbmc.LOGDEBUG)
         mailru = self.get_url(url, 'mailru.html')
-        self.xbmc.log('scrape_video_mailru: mailru=' + str(mailru))
+        self.xbmc.log('scrape_video_mailru: mailru=' + str(mailru),
+                      level=self.xbmc.LOGDEBUG)
         videos = re.findall(',"videos":\[{(.+?)}\],', mailru)
         names = re.findall('"key":"(.+?)"', videos[0])
         urls = [self.addCookies2Url(x) for x in re.findall('"url":"(.+?)"', videos[0])]
@@ -301,12 +322,15 @@ class Swefilmer:
             unpacked = self.unpack(pack[0], int(pack[1]), int(pack[2]),
                                    pack[3].split('|'))
             url = re.findall('file:"(.+?)"', unpacked)[0]
-            self.xbmc.log('scrape_video_registered: url= ' + str(url))
+            self.xbmc.log('scrape_video_registered: url= ' + str(url),
+                          level=self.xbmc.LOGDEBUG)
             return url
-        self.xbmc.log('scrape_video_registered: search for videoSrc')
+        self.xbmc.log('scrape_video_registered: search for videoSrc',
+                      level=self.xbmc.LOGDEBUG)
         videosrc = re.findall('videoSrc = "(.+?)"', html)
         if videosrc:
-            self.xbmc.log('scrape_video_registered: url= ' + str(videosrc[0]))
+            self.xbmc.log('scrape_video_registered: url= ' + str(videosrc[0]),
+                          level=self.xbmc.LOGDEBUG)
             return videosrc[0]
 
     def new_menu_html(self):

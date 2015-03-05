@@ -43,6 +43,14 @@ class Navigation(object):
         else:
             return None
 
+    def player_select(self, count):
+        names = []
+        for i in range(count):
+            names.append("Player" + str(i+1))
+        dialog = self.xbmcgui.Dialog()
+        ix = dialog.select(self.localize(30202), names)
+        return ix
+
     def quality_select(self, stream_urls):
         sortable = True
         ix = 0
@@ -52,7 +60,8 @@ class Navigation(object):
             stream_urls = zip(qualities, urls)
             stream_urls.sort(key=lambda tup: tup[0])
         except:
-            self.xbmc.log('quality_select: not sortable: ' + str(stream_urls))
+            self.xbmc.log('quality_select: not sortable: ' + str(stream_urls),
+                          level=self.xbmc.LOGNOTICE)
             sortable = False
             qualities = [s[0] for s in stream_urls]
         if not sortable or self.select_quality == 0:
@@ -189,8 +198,8 @@ class Navigation(object):
         url = self.params['url']
         html = self.swefilmer.video_html(url)
         result = self.swefilmer.scrape_video(html)
-        if result: name, description, img, streams = result
-        if not result or not streams or len(streams) == 0:
+        if result: name, description, img, players = result
+        if not result or not players or len(players) == 0:
             if not self.params['logged_in']:
                 self.xbmcgui.Dialog().ok(self.localize(30401),
                                          self.localize(30402),
@@ -202,10 +211,19 @@ class Navigation(object):
                 self.handle, succeeded=False,
                 listitem=self.xbmcgui.ListItem(''))
             return False
-        self.xbmc.log('video: name=' + str(name))
-        self.xbmc.log('video: description=' + str(description))
-        self.xbmc.log('video: img=' + str(img))
-        self.xbmc.log('video: streams=' + str(streams))
+        self.xbmc.log('video: name=' + str(name), level=self.xbmc.LOGDEBUG)
+        self.xbmc.log('video: description=' + str(description),
+                      level=self.xbmc.LOGDEBUG)
+        self.xbmc.log('video: img=' + str(img), level=self.xbmc.LOGDEBUG)
+        self.xbmc.log('video: players=' + str(players), level=self.xbmc.LOGDEBUG)
+        if len(players) > 1:
+            ix = self.player_select(len(players))
+            if ix > -1:
+                streams = players[ix]
+            else:
+                return False
+        else:
+            streams = players[0]
         if len(streams) > 1:
             url = self.quality_select(streams)
             if not url:
@@ -254,7 +272,7 @@ class Navigation(object):
 # Use of standalone Navigation for testing:
 # python navigation.py <params>
 if __name__ == '__main__':
-    xbmc = Xbmc(level=Xbmc.LOGNOTICE)
+    xbmc = Xbmc(level=xbmc.LOGNOTICE)
     xbmcplugin = Xbmcplugin(xbmc)
     xbmcgui = Xbmcgui()
     xbmcaddon = Xbmcaddon()
