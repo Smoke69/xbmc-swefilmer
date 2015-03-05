@@ -8,6 +8,7 @@ class Xbmc(object):
     BACK = 1
     LOGERROR = ['ERROR', 1]
     LOGNOTICE = ['NOTICE', 2]
+    LOGDEBUG = ['NOTICE', 3]
 
     def __init__(self, level=LOGERROR):
         self.level = level
