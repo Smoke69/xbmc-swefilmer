@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addons>
+<addon id="plugin.video.swefilmer"
+       name="SweFilmer"
+       version="1.13"
+       provider-name="kokangit">
+  <requires>
+    <import addon="xbmc.python" version="2.1.0"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en">Watch content from swefilmer.</summary>
+    <summary lang="sv">Titta på innehåll från swefilmer.</summary>
+    <description lang="en">With this addon you can stream content from swefilmer (www.swefilmer.com).</description>
+	<description lang="sv">Med denna addon kan du strömma innehåll från swefilmer (www.swefilmer.com).</description>
+    <platform>all</platform>
+    <website>https://github.com/kokangit/xbmc-swefilmer</website>
+    <source>https://github.com/kokangit/xbmc-swefilmer</source>
+  </extension>
+  <extension point="xbmc.addon.repository" name="Repository for swefilmer addon">
+    <info compressed="false">https://raw.githubusercontent.com/kokangit/xbmc-swefilmer/master/addons.xml</info>
+    <checksum>https://raw.githubusercontent.com/kokangit/xbmc-swefilmer/master/addons.xml.md5</checksum>
+    <datadir zip="true">https://github.com/kokangit/xbmc-swefilmer/raw/master/downloads</datadir>
+  </extension>
+</addon>
+</addons>
