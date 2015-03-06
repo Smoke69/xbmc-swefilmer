@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addons>
 <addon id="plugin.video.swefilmer"
        name="SweFilmer"
        version="1.13"
@@ -19,10 +18,11 @@
     <website>https://github.com/kokangit/xbmc-swefilmer</website>
     <source>https://github.com/kokangit/xbmc-swefilmer</source>
   </extension>
+</addon>
+<addons>
   <extension point="xbmc.addon.repository" name="Repository for swefilmer addon">
     <info compressed="false">https://raw.githubusercontent.com/kokangit/xbmc-swefilmer/master/addon.xml</info>
     <checksum>https://raw.githubusercontent.com/kokangit/xbmc-swefilmer/master/addon.xml.md5</checksum>
     <datadir zip="true">https://github.com/kokangit/xbmc-swefilmer/raw/master/downloads</datadir>
   </extension>
-</addon>
 </addons>
