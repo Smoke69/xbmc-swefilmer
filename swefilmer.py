@@ -6,6 +6,7 @@ import re
 import time
 import urllib
 import urllib2
+import urlparse
 
 SAVE_FILE = False
 BASE_URL = 'http://www.swefilmer.com/'
@@ -15,9 +16,12 @@ class Swefilmer:
 
     class MyHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
         def http_error_302(self, req, fp, code, msg, headers):
-            return urllib2.HTTPRedirectHandler.http_error_302(self, req, fp,
-                                                              code, msg,
-                                                              headers)
+            if msg == "Found":
+                return fp
+            else:
+                return urllib2.HTTPRedirectHandler.http_error_302(self, req, fp,
+                                                                  code, msg,
+                                                                  headers)
 
         http_error_301 = http_error_303 = http_error_307 = http_error_302
 
@@ -263,11 +267,13 @@ class Swefilmer:
                 flashvars = re.findall('var flashVars = {(.+?)}', document)
                 if len(flashvars) > 0:
                     streams = self.scrape_video_mailru(flashvars[0])
+                elif document.find("document.write(unescape(") > -1:
+                    streams = self.scrape_video_mega(document)
                 else:
-                    url = self.scrape_video_registered(document)
-                    url = self.addCookies2Url(url)
-                    streams = [('', url)]
-            if streams and len(streams) > 0: items.append(streams)
+                    streams = self.scrape_video_registered(document)
+            if streams and len(streams) > 0:
+                name = urlparse.urlparse(streams[0][1]).netloc
+                items.append((name, streams))
             self.xbmc.log('scrape_video_urls: streams=' + str(streams),
                           level=self.xbmc.LOGDEBUG)
         return items
@@ -312,7 +318,18 @@ class Swefilmer:
         urls = re.findall('"url([0-9]+?)":"(.+?)"', documentQ)
         return urls
 
+    def scrape_video_mega(self, html):
+        #html = urllib.unquote(re.findall('document.write\(unescape\("(.+?)"', html)[0])
+        html = [urllib.unquote(x) for x in re.findall('document.write\(unescape\("(.+?)"', html)]
+        self.xbmc.log("scrape_video_mega: html=" + str(html), level=self.xbmc.LOGDEBUG)
+        url = [re.findall('file: "(.+?)"', x) for x in html]
+        self.xbmc.log("scrape_video_mega: url=" + str(url), level=self.xbmc.LOGDEBUG)
+        url = self.addCookies2Url(url[0])
+        return None
+        return [('', url)]
+
     def scrape_video_registered(self, html):
+        url = None
         script = re.findall(
             '(<script type=\'text/javascript\'>eval\(function\(.*}\(.*)', html)
         if len(script) > 0:
@@ -322,16 +339,13 @@ class Swefilmer:
             unpacked = self.unpack(pack[0], int(pack[1]), int(pack[2]),
                                    pack[3].split('|'))
             url = re.findall('file:"(.+?)"', unpacked)[0]
-            self.xbmc.log('scrape_video_registered: url= ' + str(url),
-                          level=self.xbmc.LOGDEBUG)
-            return url
-        self.xbmc.log('scrape_video_registered: search for videoSrc',
-                      level=self.xbmc.LOGDEBUG)
-        videosrc = re.findall('videoSrc = "(.+?)"', html)
-        if videosrc:
-            self.xbmc.log('scrape_video_registered: url= ' + str(videosrc[0]),
-                          level=self.xbmc.LOGDEBUG)
-            return videosrc[0]
+        else:
+            videosrc = re.findall('videoSrc = "(.+?)"', html)
+            if videosrc:
+                url = videosrc[0]
+        if not url: return None
+        url = self.addCookies2Url(url)
+        return [('', url)]
 
     def new_menu_html(self):
         url = BASE_URL + 'newvideos.html'

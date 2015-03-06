@@ -1,3 +1,7 @@
+Version 1.13
+------------
+Added resolver
+
 Version 1.12
 ------------
 Missing merge

@@ -43,10 +43,10 @@ class Navigation(object):
         else:
             return None
 
-    def player_select(self, count):
+    def player_select(self, players):
         names = []
-        for i in range(count):
-            names.append("Player" + str(i+1))
+        for player in players:
+            names.append(player[0])
         dialog = self.xbmcgui.Dialog()
         ix = dialog.select(self.localize(30202), names)
         return ix
@@ -217,13 +217,13 @@ class Navigation(object):
         self.xbmc.log('video: img=' + str(img), level=self.xbmc.LOGDEBUG)
         self.xbmc.log('video: players=' + str(players), level=self.xbmc.LOGDEBUG)
         if len(players) > 1:
-            ix = self.player_select(len(players))
+            ix = self.player_select(players)
             if ix > -1:
-                streams = players[ix]
+                streams = players[ix][1]
             else:
                 return False
         else:
-            streams = players[0]
+            streams = players[0][1]
         if len(streams) > 1:
             url = self.quality_select(streams)
             if not url:
