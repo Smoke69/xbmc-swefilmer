@@ -58,6 +58,7 @@ class Navigation(object):
             urls = [x[1] for x in stream_urls]
             stream_urls = zip(qualities, urls)
             stream_urls.sort(key=lambda tup: tup[0])
+            qualities = [re.findall('[0-9]+', s[0])[0] for s in stream_urls]
         except:
             self.xbmc.log('quality_select: not sortable: ' + str(stream_urls),
                           level=self.xbmc.LOGNOTICE)

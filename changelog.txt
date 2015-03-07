@@ -1,3 +1,7 @@
+Version 1.15
+------------
+Bugfix for sorting qualities
+
 Version 1.14
 ------------
 Changes for repository
