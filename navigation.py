@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from mocks import Xbmc, Xbmcplugin, Xbmcgui, Xbmcaddon
 import re
 import swefilmer
 import sys
@@ -272,6 +271,7 @@ class Navigation(object):
 # Use of standalone Navigation for testing:
 # python navigation.py <params>
 if __name__ == '__main__':
+    from mocks import Xbmc, Xbmcplugin, Xbmcgui, Xbmcaddon
     xbmc = Xbmc(level=xbmc.LOGNOTICE)
     xbmcplugin = Xbmcplugin(xbmc)
     xbmcgui = Xbmcgui()
