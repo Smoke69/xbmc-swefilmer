@@ -321,7 +321,11 @@ class Swefilmer:
     def scrape_video_mega(self, html):
         html = [urllib.unquote(x) for x in re.findall('document.write\(unescape\("(.+?)"', html)]
         #self.xbmc.log("scrape_video_mega: html=" + str(html), level=self.xbmc.LOGDEBUG)
-        url = [re.findall(',[ ]+file:[ ]*"(.+?)"', x)[0] for x in html]
+        try:
+            url = [re.findall(',[ ]*file:[ ]*"(.+?)"', x)[0] for x in html]
+        except:
+            self.xbmc.log("scrape_video_mega: parsing failed", level=self.xbmc.LOGWARNING)
+            return None
         #self.xbmc.log("scrape_video_mega: url=" + str(url), level=self.xbmc.LOGDEBUG)
         url = self.addCookies2Url(url[2])
         return [('', url)]
