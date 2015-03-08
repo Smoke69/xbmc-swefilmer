@@ -315,7 +315,7 @@ class Swefilmer:
         hash = re.findall("param\[7\]\s?\+\s?'(.+?)'", document)
         urlQ = 'https://api.vk.com/method/video.getEmbed?oid=' + oid[0] +'&video_id='+videoId[0]+'&embed_hash='+hash[0]+'&callback=callbackFunc'
         documentQ = self.get_url(urlQ, 'embed.html');
-        urls = re.findall('"url([0-9]+?)":"(.+?)"', documentQ)
+        urls = [(x[0], x[1].replace("\/", "/")) for x in re.findall('"url([0-9]+?)":"(.+?)"', documentQ)]
         return urls
 
     def scrape_video_mega(self, html):
