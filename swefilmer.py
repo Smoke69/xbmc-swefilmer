@@ -319,13 +319,11 @@ class Swefilmer:
         return urls
 
     def scrape_video_mega(self, html):
-        #html = urllib.unquote(re.findall('document.write\(unescape\("(.+?)"', html)[0])
         html = [urllib.unquote(x) for x in re.findall('document.write\(unescape\("(.+?)"', html)]
-        self.xbmc.log("scrape_video_mega: html=" + str(html), level=self.xbmc.LOGDEBUG)
-        url = [re.findall('file: "(.+?)"', x) for x in html]
-        self.xbmc.log("scrape_video_mega: url=" + str(url), level=self.xbmc.LOGDEBUG)
-        url = self.addCookies2Url(url[0])
-        return None
+        #self.xbmc.log("scrape_video_mega: html=" + str(html), level=self.xbmc.LOGDEBUG)
+        url = [re.findall(',[ ]+file:[ ]*"(.+?)"', x)[0] for x in html]
+        #self.xbmc.log("scrape_video_mega: url=" + str(url), level=self.xbmc.LOGDEBUG)
+        url = self.addCookies2Url(url[2])
         return [('', url)]
 
     def scrape_video_registered(self, html):
