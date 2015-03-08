@@ -7,8 +7,9 @@ from xml.dom.minidom import parse
 class Xbmc(object):
     BACK = 1
     LOGERROR = ['ERROR', 1]
-    LOGNOTICE = ['NOTICE', 2]
-    LOGDEBUG = ['NOTICE', 3]
+    LOGWARNING = ['WARNING', 2]
+    LOGNOTICE = ['NOTICE', 3]
+    LOGDEBUG = ['NOTICE', 4]
 
     def __init__(self, level=LOGERROR):
         self.level = level
