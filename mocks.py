@@ -9,7 +9,7 @@ class Xbmc(object):
     LOGERROR = ['ERROR', 1]
     LOGWARNING = ['WARNING', 2]
     LOGNOTICE = ['NOTICE', 3]
-    LOGDEBUG = ['NOTICE', 4]
+    LOGDEBUG = ['DEBUG', 4]
 
     def __init__(self, level=LOGERROR):
         self.level = level
