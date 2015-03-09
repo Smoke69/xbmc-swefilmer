@@ -38,7 +38,7 @@ class FirstTests(unittest.TestCase):
 
         # call with no parameters
         nav.dispatch()
-        self.traverse_video = False
+        self.traverse_video = True
         self.traverse(self.xbmcplugin.dir_items, [])
 
     def traverse(self, dir_items, stack):
