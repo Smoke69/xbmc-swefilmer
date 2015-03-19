@@ -83,13 +83,15 @@ class Navigation(object):
         url = stream_urls[ix][1]
         return url
 
-    def add_menu_item(self, caption, action, total_items, logged_in, url=None):
+    def add_menu_item(self, caption, action, total_items, logged_in=None, url=None,
+                      params=None):
         li = self.xbmcgui.ListItem(caption)
         infoLabels = {'Title': caption}
         li.setInfo(type='Video', infoLabels=infoLabels)
-        params = {'action': action, 'logged_in': logged_in}
-        if url:
-            params['url'] = url
+        if not params:
+            params = {'action': action, 'logged_in': logged_in}
+            if url:
+                params['url'] = url
         item_url = self.plugin_url + '?' + urllib.urlencode(params)
         self.xbmcplugin.addDirectoryItem(handle=self.handle, url=item_url,
                                          listitem=li, isFolder=True,
@@ -130,13 +132,31 @@ class Navigation(object):
                            logged_in)
         return True
 
-    def new_menu(self):
-        html = self.swefilmer.new_menu_html()
-        return self.scrape_list(html)
+    def new_menu(self, selection):
+        if selection > 0:
+            html = self.swefilmer.new_menu_html(selection)
+            return self.scrape_list(html)
+        selections = self.swefilmer.new_menu_sel()
+        params = {'action': ACTION_NEW, 'logged_in': self.params['logged_in']}
+        newsel = 0
+        for sel in selections:
+            newsel += 1
+            params['newsel'] = newsel
+            self.add_menu_item(sel[1], ACTION_NEW, len(selections), params=params)
+        return True
 
-    def top_menu(self):
-        html = self.swefilmer.top_menu_html()
-        return self.scrape_list(html)
+    def top_menu(self, selection):
+        if selection > 0:
+            html = self.swefilmer.top_menu_html(selection)
+            return self.scrape_list(html)
+        selections = self.swefilmer.top_menu_sel()
+        params = {'action': ACTION_TOP, 'logged_in': self.params['logged_in']}
+        topsel = 0
+        for sel in selections:
+            topsel += 1
+            params['topsel'] = topsel
+            self.add_menu_item(sel[1], ACTION_TOP, len(selections), params=params)
+        return True
 
     def favorites_menu(self):
         html = self.swefilmer.favorites_menu_html()
@@ -251,9 +271,9 @@ class Navigation(object):
         else:
             action = self.params['action']
             if action == ACTION_NEW:
-                ret = self.new_menu()
+                ret = self.new_menu(self.params.get('newsel', 0))
             elif action == ACTION_TOP:
-                ret = self.top_menu()
+                ret = self.top_menu(self.params.get('topsel', 0))
             elif action == ACTION_FAVORITES:
                 ret = self.favorites_menu()
             elif action == ACTION_CATEGORIES:

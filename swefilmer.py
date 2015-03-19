@@ -349,12 +349,28 @@ class Swefilmer:
         url = self.addCookies2Url(url)
         return [('', url)]
 
-    def new_menu_html(self):
+    def menu_sel(self, url):
+        html = self.get_url(url, 'sel.html')
+        selections = re.findall('<li class=".*?menu-item"><a href="(.+?)">(.+?)</a>', html, re.DOTALL)
+        self.xbmc.log("menu_sel: selections=" + str(selections), level=self.xbmc.LOGDEBUG)
+        return selections
+
+    def new_menu_sel(self):
         url = BASE_URL + 'newvideos.html'
+        return self.menu_sel(url)
+
+    def new_menu_html(self, selection):
+        selections = self.new_menu_sel()
+        url = selections[int(selection) - 1][0]
         return self.get_url(url, 'new.html')
 
-    def top_menu_html(self):
+    def top_menu_sel(self):
         url = BASE_URL + 'topvideos.html'
+        return self.menu_sel(url)
+
+    def top_menu_html(self, selection):
+        selections = self.top_menu_sel()
+        url = selections[int(selection) - 1][0]
         return self.get_url(url, 'top.html')
 
     def favorites_menu_html(self):
