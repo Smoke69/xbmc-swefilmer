@@ -1,3 +1,7 @@
+Version 1.17
+------------
+Selections for top list and new films
+
 Version 1.16
 ------------
 Parsing and bugfixing
