@@ -397,7 +397,7 @@ class Swefilmer:
 
     def search_menu_html(self, search_string):
         url = BASE_URL + 'search.php?' + \
-            urllib.urlencode({'keywords': search_string})
+            urllib.urlencode({'keywords': search_string}) + '&d=title'
         return self.get_url(url, 'search.html')
 
     def menu_html(self, url):
