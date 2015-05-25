@@ -217,7 +217,7 @@ class Navigation(object):
     def video(self):
         url = self.params['url']
         html = self.swefilmer.video_html(url)
-        result = self.swefilmer.scrape_video(html)
+        result = self.swefilmer.scrape_video(html, url)
         if result: name, description, img, players = result
         if not result or not players or len(players) == 0:
             if not self.params['logged_in']:

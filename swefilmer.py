@@ -219,7 +219,7 @@ class Swefilmer:
             url_and_name_pattern='<a href="(.+?)">(.+?)</a>',
             img_pattern=None)
 
-    def scrape_video(self, html):
+    def scrape_video(self, html, referer=None):
         if html.find('id="restricted_video"') > -1:
             # registered users only, not logged in?
             return None
@@ -239,9 +239,9 @@ class Swefilmer:
         self.xbmc.log('scrape_video: img=' + str(img),
                       level=self.xbmc.LOGDEBUG)
         players = re.findall('<div id="(.+?)".+?swe.zzz\(\'(.+?)\'', html)
-        return name, description, img, self.scrape_video_urls(players)
+        return name, description, img, self.scrape_video_urls(players, referer)
 
-    def scrape_video_urls(self, players):
+    def scrape_video_urls(self, players, referer=None):
         items = []
         for player in players:
             self.xbmc.log('scrape_video_urls: player=' + str(player),
@@ -254,10 +254,14 @@ class Swefilmer:
             url = self.html_parser.unescape(re.findall('<iframe .*?src="(.+?)" ', html)[0])
             self.xbmc.log('scrape_video_urls: url=' + str(url),
                           level=self.xbmc.LOGDEBUG)
-            document = self.get_url(url, 'document.html')
+            document = self.get_url(url, 'document_' + str(player[0]) + '.html', referer=referer)
             if document == None: continue
             if 'docs.google.com' in url:
                 streams = self.scrape_googledocs(document)
+            elif len(re.findall('script\.src=', document)) > 0:
+                streams = self.scrape_video_jwplayer3(document)
+            elif len(re.findall(';vsource=\[', document)) > 0:
+                streams = self.scrape_video_jwplayer4(document)
             elif len(re.findall('jwplayer\(.+?\)\.setup', document)) > 0:
                 if len(re.findall('sources: \[(.+?)\]', document)) > 0:
                     streams = self.scrape_video_jwplayer(document)
@@ -279,10 +283,10 @@ class Swefilmer:
         return items
 
     def scrape_googledocs(self, html):
-        fmt_list = re.findall('"fmt_list":"(.+?)"', html)
+        fmt_list = re.findall('"fmt_list"[:,]"(.+?)"', html)
         if len(fmt_list) == 0: return None
         formats = fmt_list[0].split(',')
-        streams = re.findall('"url_encoded_fmt_stream_map":"(.+?)"',
+        streams = re.findall('"url_encoded_fmt_stream_map"[:,]"(.+?)"',
                              html)[0].split(',')
         urls = [self.addCookies2Url(urllib2.unquote(x).split('\\u0026')[1]
                                     .split('\\u003d')[1]) for x in streams]
@@ -315,7 +319,18 @@ class Swefilmer:
         hash = re.findall("param\[7\]\s?\+\s?'(.+?)'", document)
         urlQ = 'https://api.vk.com/method/video.getEmbed?oid=' + oid[0] +'&video_id='+videoId[0]+'&embed_hash='+hash[0]+'&callback=callbackFunc'
         documentQ = self.get_url(urlQ, 'embed.html');
-        urls = [(x[0], x[1].replace("\/", "/")) for x in re.findall('"url([0-9]+?)":"(.+?)"', documentQ)]
+        urls = [(x[0], self.addCookies2Url(x[1].replace("\/", "/"))) for x in re.findall('"url([0-9]+?)":"(.+?)"', documentQ)]
+        return urls
+
+    def scrape_video_jwplayer3(self, document):
+        url = re.findall('script\.src="(.+?)"', document)[0]
+        document = self.get_url(url, 'embed.html')
+        urls = [(x[0], self.addCookies2Url(x[1].replace("\/", "/"))) for x in re.findall('"url([0-9]+?)":"(.+?)"', document)]
+        return urls
+
+    def scrape_video_jwplayer4(self, document):
+        vsource = re.findall(';vsource=\[(.+?)\];', document)[0]
+        urls = [(x[1], self.addCookies2Url(x[0])) for x in re.findall('{file:"(.+?)", label:"(.+?)"', vsource)]
         return urls
 
     def scrape_video_mega(self, html):
