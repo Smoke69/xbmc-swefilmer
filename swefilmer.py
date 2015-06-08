@@ -8,7 +8,7 @@ import urllib
 import urllib2
 import urlparse
 
-SAVE_FILE = False
+SAVE_FILE = True
 BASE_URL = 'http://www.swefilmer.com/'
 USERAGENT = ' Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3'
 
@@ -260,7 +260,7 @@ class Swefilmer:
                 streams = self.scrape_googledocs(document)
             elif len(re.findall('script\.src=', document)) > 0:
                 streams = self.scrape_video_jwplayer3(document)
-            elif len(re.findall(';vsource=\[', document)) > 0:
+            elif len(re.findall('[;\s]vsource\s*=\s*\[', document)) > 0:
                 streams = self.scrape_video_jwplayer4(document)
             elif len(re.findall('jwplayer\(.+?\)\.setup', document)) > 0:
                 if len(re.findall('sources: \[(.+?)\]', document)) > 0:
@@ -329,7 +329,7 @@ class Swefilmer:
         return urls
 
     def scrape_video_jwplayer4(self, document):
-        vsource = re.findall(';vsource=\[(.+?)\];', document)[0]
+        vsource = re.findall('[;\s]vsource\s*=\s*\[(.+?)\];', document)[0]
         urls = [(x[1], self.addCookies2Url(x[0])) for x in re.findall('{file:"(.+?)", label:"(.+?)"', vsource)]
         return urls
 

@@ -1,3 +1,7 @@
+Version 1.19
+------------
+Fixed search pattern for jwplayer4
+
 Version 1.18
 ------------
 Fixed some resolvings
