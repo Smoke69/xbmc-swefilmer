@@ -8,7 +8,7 @@ import urllib
 import urllib2
 import urlparse
 
-SAVE_FILE = True
+SAVE_FILE = False
 BASE_URL = 'http://www.swefilmer.com/'
 USERAGENT = ' Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3'
 
@@ -262,6 +262,8 @@ class Swefilmer:
                 streams = self.scrape_video_jwplayer3(document)
             elif len(re.findall('[;\s]vsource\s*=\s*\[', document)) > 0:
                 streams = self.scrape_video_jwplayer4(document)
+            elif len(re.findall('sources:\[', document)) > 0:
+                streams = self.scrape_video_jwplayer5(document)
             elif len(re.findall('jwplayer\(.+?\)\.setup', document)) > 0:
                 if len(re.findall('sources: \[(.+?)\]', document)) > 0:
                     streams = self.scrape_video_jwplayer(document)
@@ -278,8 +280,11 @@ class Swefilmer:
             if streams and len(streams) > 0:
                 name = urlparse.urlparse(streams[0][1]).netloc
                 items.append((name, streams))
-            self.xbmc.log('scrape_video_urls: streams=' + str(streams),
-                          level=self.xbmc.LOGDEBUG)
+                self.xbmc.log('scrape_video_urls: streams=' + str(streams),
+                              level=self.xbmc.LOGDEBUG)
+            else:
+                self.xbmc.log('scrape_video_urls: player %s FAILED: %s' %
+                              (player[0], url), level=self.xbmc.LOGNOTICE)
         return items
 
     def scrape_googledocs(self, html):
@@ -331,6 +336,12 @@ class Swefilmer:
     def scrape_video_jwplayer4(self, document):
         vsource = re.findall('[;\s]vsource\s*=\s*\[(.+?)\];', document)[0]
         urls = [(x[1], self.addCookies2Url(x[0])) for x in re.findall('{file:"(.+?)", label:"(.+?)"', vsource)]
+        return urls
+
+    def scrape_video_jwplayer5(self, document):
+        sources = re.findall('sources:\[(.+?)\]', document)[0]
+        urls = [(x[1], self.addCookies2Url(x[0].replace('\\x', '').decode('hex'))) for x in re.findall('{"file":"(.+?)", "label":"(.+?)"', sources)]
+        return None
         return urls
 
     def scrape_video_mega(self, html):
