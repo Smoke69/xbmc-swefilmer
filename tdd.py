@@ -9,7 +9,7 @@ import sys
 
 class FirstTests(unittest.TestCase):
     def setUp(self):
-        self.xbmc = Xbmc(Xbmc.LOGERROR)
+        self.xbmc = Xbmc(Xbmc.LOGNOTICE)
         self.xbmcplugin = Xbmcplugin(self.xbmc)
         self.xbmcgui = Xbmcgui()
         self.xbmcaddon = Xbmcaddon()
