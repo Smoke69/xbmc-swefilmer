@@ -29,7 +29,7 @@ class Xbmc(object):
         def getText(self):
             return 'bad'
 
-    def log(self, msg, level=LOGNOTICE):
+    def log(self, msg, level=LOGDEBUG):
         if level[1] <= self.level[1]:
             print msg
 
@@ -54,7 +54,7 @@ class Xbmcplugin(object):
     def addDirectoryItem(self, handle, url, listitem, isFolder, totalItems=None):
         self.dir_items.append((handle, url, listitem, isFolder))
         self.xbmc.log('addDirectoryItem %s - %s' % (listitem.caption,
-                                                    str(url)), Xbmc.LOGNOTICE)
+                                                    str(url)), Xbmc.LOGDEBUG)
 
     def endOfDirectory(self, handle, succeeded=None, updateListing=None,
                        cacheToDisc=None):
