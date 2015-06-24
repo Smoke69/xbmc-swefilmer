@@ -53,9 +53,9 @@ class Swefilmer:
         Sends cookies, receives cookies and saves them.
         Resonse html can be saved in file for debugging.
         """
-        self.xbmc.log('get_url' + ((' (' + filename + ')')
-                                   if filename else '') + ': ' +
-                      str(url), level=self.xbmc.LOGDEBUG)
+        self.xbmc.log('***** get_url' + ((' (' + filename + ')')
+                                   if filename else '') + ' referer=' +
+                      str(referer) + ': ' + str(url), level=self.xbmc.LOGDEBUG)
         req = urllib2.Request(url)
         req.add_header('User-Agent', USERAGENT)
         if referer:
@@ -67,7 +67,7 @@ class Swefilmer:
             response.close()
             self.cookiejar.save()
         except urllib2.HTTPError as e:
-            self.xbmc.log('get_url: failed: ' + str(e), level=self.xbmc.LOGERROR)
+            self.xbmc.log('***** get_url: failed: ' + str(e), level=self.xbmc.LOGERROR)
             return None
 
         if filename and SAVE_FILE:
@@ -231,12 +231,12 @@ class Swefilmer:
             name = name[0]
         description = re.findall(
             '>Beskrivning<.*?<p>(.+?)</p>', html, re.DOTALL)
-        self.xbmc.log('scrape_video: description=' + str(description),
+        self.xbmc.log('***** scrape_video: description=' + str(description),
                       level=self.xbmc.LOGDEBUG)
         img = re.findall(
             '<div class="filmaltiimg">.*?<img src="(.+?)".*?</div>', html,
             re.DOTALL)
-        self.xbmc.log('scrape_video: img=' + str(img),
+        self.xbmc.log('***** scrape_video: img=' + str(img),
                       level=self.xbmc.LOGDEBUG)
         players = re.findall('<div id="(.+?)".+?swe.zzz\(\'(.+?)\'', html)
         return name, description, img, self.scrape_video_urls(players, referer)
@@ -244,15 +244,15 @@ class Swefilmer:
     def scrape_video_urls(self, players, referer=None):
         items = []
         for player in players:
-            self.xbmc.log('scrape_video_urls: player=' + str(player),
+            self.xbmc.log('***** scrape_video_urls: player=' + str(player),
                           level=self.xbmc.LOGDEBUG)
             streams = None
             if player[0].find("trailer") > -1: continue
             html = self.yazyaz(player[1])
-            self.xbmc.log('scrape_video_urls: html=' + str(html),
+            self.xbmc.log('***** scrape_video_urls: html=' + str(html),
                           level=self.xbmc.LOGDEBUG)
             url = self.html_parser.unescape(re.findall('<iframe .*?src="(.+?)" ', html)[0])
-            self.xbmc.log('scrape_video_urls: url=' + str(url),
+            self.xbmc.log('***** scrape_video_urls: url=' + str(url),
                           level=self.xbmc.LOGDEBUG)
             document = self.get_url(url, 'document_' + str(player[0]) + '.html', referer=referer)
             if document == None: continue
@@ -275,15 +275,17 @@ class Swefilmer:
                     streams = self.scrape_video_mailru(flashvars[0])
                 elif document.find("document.write(unescape(") > -1:
                     streams = self.scrape_video_mega(document)
+                elif len(re.findall('source src=".+?\.videomega\..+?mp4', document)) > 0:
+                    streams = self.scrape_video_mega2(document)
                 else:
                     streams = self.scrape_video_registered(document)
             if streams and len(streams) > 0:
                 name = urlparse.urlparse(streams[0][1]).netloc
                 items.append((name, streams))
-                self.xbmc.log('scrape_video_urls: streams=' + str(streams),
+                self.xbmc.log('***** scrape_video_urls: streams=' + str(streams),
                               level=self.xbmc.LOGDEBUG)
             else:
-                self.xbmc.log('scrape_video_urls: player %s FAILED: %s' %
+                self.xbmc.log('***** scrape_video_urls: player %s FAILED: %s' %
                               (player[0], url), level=self.xbmc.LOGNOTICE)
         return items
 
@@ -299,10 +301,10 @@ class Swefilmer:
 
     def scrape_video_mailru(self, flashvars):
         url = re.findall('"metadataUrl":"(.+?)"', flashvars)[0]
-        self.xbmc.log('scrape_video_mailru: url=' + str(url),
+        self.xbmc.log('***** scrape_video_mailru: url=' + str(url),
                       level=self.xbmc.LOGDEBUG)
         mailru = self.get_url(url, 'mailru.html')
-        self.xbmc.log('scrape_video_mailru: mailru=' + str(mailru),
+        self.xbmc.log('***** scrape_video_mailru: mailru=' + str(mailru),
                       level=self.xbmc.LOGDEBUG)
         videos = re.findall(',"videos":\[{(.+?)}\],', mailru)
         names = re.findall('"key":"(.+?)"', videos[0])
@@ -341,19 +343,22 @@ class Swefilmer:
     def scrape_video_jwplayer5(self, document):
         sources = re.findall('sources:\[(.+?)\]', document)[0]
         urls = [(x[1], self.addCookies2Url(x[0].replace('\\x', '').decode('hex'))) for x in re.findall('{"file":"(.+?)", "label":"(.+?)"', sources)]
-        return None
         return urls
 
     def scrape_video_mega(self, html):
         html = [urllib.unquote(x) for x in re.findall('document.write\(unescape\("(.+?)"', html)]
-        #self.xbmc.log("scrape_video_mega: html=" + str(html), level=self.xbmc.LOGDEBUG)
+        self.xbmc.log('***** scrape_video_mega: html=' + str(html), level=self.xbmc.LOGDEBUG)
         try:
             url = [re.findall(',[ ]*file:[ ]*"(.+?)"', x)[0] for x in html]
         except:
-            self.xbmc.log("scrape_video_mega: parsing failed", level=self.xbmc.LOGWARNING)
+            self.xbmc.log('***** scrape_video_mega: parsing failed', level=self.xbmc.LOGWARNING)
             return None
-        #self.xbmc.log("scrape_video_mega: url=" + str(url), level=self.xbmc.LOGDEBUG)
+        self.xbmc.log('***** scrape_video_mega: url=' + str(url), level=self.xbmc.LOGDEBUG)
         url = self.addCookies2Url(url[2])
+        return [('', url)]
+
+    def scrape_video_mega2(self, html):
+        url = self.addCookies2Url(re.findall('source src="(.+?)"', html)[0])
         return [('', url)]
 
     def scrape_video_registered(self, html):
@@ -378,7 +383,7 @@ class Swefilmer:
     def menu_sel(self, url):
         html = self.get_url(url, 'sel.html')
         selections = re.findall('<li class=".*?menu-item"><a href="(.+?)">(.+?)</a>', html, re.DOTALL)
-        self.xbmc.log("menu_sel: selections=" + str(selections), level=self.xbmc.LOGDEBUG)
+        self.xbmc.log('***** menu_sel: selections=' + str(selections), level=self.xbmc.LOGDEBUG)
         return selections
 
     def new_menu_sel(self):
